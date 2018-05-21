@@ -2,6 +2,9 @@
 -- TODO: consider using newtype instead of FlexibleInstances
 import qualified Data.Map as Map
 
+import Graphics
+import Game
+
 -- TODO: checkout constants defining/naming convention
 boardMaxIndex = 7
 
@@ -36,6 +39,7 @@ initialState :: ((Map.Map (Int, Int) Bool), Bool)
 initialState = (Map.fromList (((0,0), True):[((x, boardMaxIndex), False) | x <- [1,3 .. boardMaxIndex]]), True)
 
 
-main = do
-        print initialState
-        print (nextStates initialState)
+main = Graphics.with_SDL
+     $ Graphics.with_window "Kappa" (800, 640)
+     $ Graphics.with_renderer
+     $ Game.main_loop
