@@ -3,10 +3,11 @@ module Game where
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Extra    (whileM)
 
-import qualified SDL
 
-import GameState (GameState, initial_state, Player(Sheep, Wolf))
-import Graphics  (clear_screen)
+import qualified SDL
+import Draw (drawGame)
+
+import GameState (initial_state, Player(Sheep, Wolf))
 
 
 main_loop :: SDL.Renderer -> IO ()
@@ -28,9 +29,3 @@ is_quit _                           = False
 conditional_run :: (Monad m) => m a -> Bool -> m Bool
 conditional_run f True  = True <$ f
 conditional_run _ False = pure False
-
-
-drawGame :: SDL.Renderer -> GameState -> IO ()
-drawGame renderer game = do
-    clear_screen renderer
-    SDL.present renderer

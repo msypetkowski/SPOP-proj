@@ -9,7 +9,7 @@ import Data.Text              (pack)
 import SDL
 
 
-data Color = FieldDark | FieldBright | PawnWhite | PawnBlack | FieldHighlight | PawnHighlight deriving (Show)
+data Color = FieldDark | FieldBright | PawnWhite | PawnBlack | FieldHighlight | PawnHighlight | Background deriving (Show)
 
 
 with_SDL :: (MonadIO m) => m a -> m ()
@@ -50,9 +50,10 @@ set_color r PawnBlack      = SDL.rendererDrawColor r $= V4 10  10  10  255
 set_color r PawnWhite      = SDL.rendererDrawColor r $= V4 255 255 254 255
 set_color r FieldHighlight = SDL.rendererDrawColor r $= V4 0   0   255 255
 set_color r PawnHighlight  = SDL.rendererDrawColor r $= V4 255 0   0   255
+set_color r Background     = SDL.rendererDrawColor r $= V4 0   0   0   255
 
 
 clear_screen :: (MonadIO m) => SDL.Renderer -> m ()
 clear_screen renderer = do
-    set_color renderer FieldDark
+    set_color renderer Background
     SDL.clear renderer
