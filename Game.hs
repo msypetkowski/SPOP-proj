@@ -6,15 +6,22 @@ import Control.Monad.Extra    (whileM)
 
 import qualified SDL
 import Draw (drawGame)
+import Rules (Player(Sheep, Wolf), initial_state, GameState, nextStates)
+import DrawState(sparse_to_draw_state)
 
-import GameState (initial_state, Player(Sheep, Wolf))
-
+-- TODO: implement AI or player movement
+-- now, there are only first possible move choices
+get_next_state :: GameState -> GameState
+get_next_state s = head (nextStates s)
 
 main_loop :: SDL.Renderer -> IO ()
 main_loop renderer = do
+    let cur_state = (initial_state Wolf)
     whileM $
+        -- TODO: update somehow cur_state (using get_next_state)
         fmap should_run SDL.pollEvent
-        >>= conditional_run (drawGame renderer (initial_state Sheep))
+        >>= conditional_run (drawGame renderer
+                    (sparse_to_draw_state cur_state))
 
 
 should_run :: Maybe SDL.Event -> Bool

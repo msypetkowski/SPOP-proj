@@ -1,6 +1,6 @@
 module Draw where
 
-import GameState
+import DrawState
 import qualified Graphics
 
 import qualified SDL
@@ -55,10 +55,10 @@ drawPawn r pawn (x, y) = do
             White -> Graphics.PawnWhite
 
 
-drawGame :: SDL.Renderer -> GameState -> IO ()
-drawGame renderer (GameState {board = b, current_player = c}) = do
+drawGame :: SDL.Renderer -> DrawGameState -> IO ()
+drawGame renderer (DrawGameState {board = b, current_player = c}) = do
     Graphics.clear_screen renderer
-    SDL.present renderer
+    -- SDL.present renderer
     Graphics.set_color renderer Graphics.FieldBright
     drawBoard renderer b
     SDL.present renderer
