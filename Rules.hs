@@ -4,39 +4,58 @@ import qualified Data.Map as Map
 
 boardMaxIndex = 7
 
-data Player = Sheep | Wolf deriving (Show)
+type Position = (Int, Int)
+
+data Player = Sheep | Wolf deriving (Show, Eq)
 
 
 data GameState = GameState {
-    board1 :: Map.Map (Int, Int) Bool,
-    currentPlayer1 :: Player
+    board :: Map.Map Position Player,
+    currentPlayer :: Player
 } deriving (Show)
 
 
-getWolfPos ((pos, True):xs) = pos
-getWolfPos ((pos, False):xs) = getWolfPos xs
+getWolfPos ((pos, Wolf):xs) = pos
+getWolfPos ((pos, Sheep):xs) = getWolfPos xs
 
-sheepCollides :: (Int, Int) -> Map.Map (Int, Int) Bool -> Bool
-sheepCollides wolfPos pawnsMap = not ((Map.lookup wolfPos pawnsMap) == Nothing)
-checkWolfMove :: (Int, Int) -> Map.Map (Int, Int) Bool -> Bool
-checkWolfMove (x,y) pawnsMap = x >= 0 && y >= 0 && x <= boardMaxIndex && y <= boardMaxIndex && not (sheepCollides (x,y) pawnsMap)
 
-wolfMove :: (Int, Int) -> Map.Map (Int, Int) Bool -> [(Int, Int)]
-wolfMove (x,y) pawnsMap = [(x+i, y+j) | i <- [negate 1, 1], j <- [negate 1, 1], checkWolfMove (x+i, y+j) pawnsMap]
+is_field_taken :: Position -> Map.Map Position Player -> Bool
+is_field_taken position pawns_map = (Map.lookup position pawns_map) /= Nothing
+
+
+is_move_valid :: Position -> Map.Map Position Player -> Bool
+is_move_valid (x,y) pawnsMap = x >= 0 && y >= 0 && x <= boardMaxIndex && y <= boardMaxIndex && not (is_field_taken (x,y) pawnsMap)
+
+
+wolfMove :: Position -> Map.Map Position Player -> [Position]
+wolfMove (x,y) pawnsMap = [(x+i, y+j) | i <- [negate 1, 1], j <- [negate 1, 1], is_move_valid (x+i, y+j) pawnsMap]
 
 
 nextStates :: GameState -> [GameState]
-nextStates (GameState m Wolf) = [(GameState (Map.insert key True (Map.delete wp m)) Sheep) | key <- (wolfMove wp m)]
-                            where wp = getWolfPos (Map.toList m)
+nextStates (GameState map Wolf) = [(GameState (Map.insert key Wolf (Map.delete wp map)) Sheep) | key <- (wolfMove wp map)]
+                            where wp = getWolfPos (Map.toList map)
 
--- TODO: Implement sheep movement. Now, only wolf moves.
--- nextStates (GameState m Sheep) = error "Sheep movement not Implemented"
-nextStates (GameState m Sheep) = (nextStates (GameState m Wolf))
+nextStates (GameState map Sheep) = concat [(get_all_sheep_moves sheep_pos map) | sheep_pos <- sheep_positions map]
+
+
+sheep_positions :: Map.Map Position Player -> [Position]
+sheep_positions map = [position | (position, pawn) <- Map.toList map, pawn == Sheep]
+
+
+get_all_sheep_moves :: Position -> Map.Map Position Player -> [GameState]
+get_all_sheep_moves sheep map =
+    [(GameState (Map.insert position Sheep (Map.delete sheep map)) Wolf)
+     | position <- (new_sheep_positions sheep map)]
+
+
+new_sheep_positions :: Position -> Map.Map Position Player -> [Position]
+new_sheep_positions (x, y) map = [(x + i, y + j) | i <- [1], j <- [-1, 1], is_move_valid (x + i, y + j) map]
 
 
 --see https://pl.wikipedia.org/wiki/Wilk_i_owce#/media/File:Foxandhounds.png
+--TODO: Wilk moze zaczynac z dowolnego czarnego pola w pierwszym rzedzie
 initial_state :: Player -> GameState
 initial_state starting = GameState {
-    board1 = (Map.fromList (((0,0), True):[((x, boardMaxIndex), False) | x <- [1,3 .. boardMaxIndex]])),
-    currentPlayer1 = Wolf
+    board = (Map.fromList (((0,0), Wolf):[((x, boardMaxIndex), Sheep) | x <- [1,3 .. boardMaxIndex]])),
+    currentPlayer = Wolf
 }

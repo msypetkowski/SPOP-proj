@@ -21,7 +21,7 @@ main_loop renderer = do
         -- TODO: update somehow cur_state (using get_next_state)
         fmap should_run SDL.pollEvent
         >>= conditional_run (drawGame renderer
-                    (sparse_to_draw_state cur_state))
+                    (sparse_to_draw_state (get_next_state cur_state)))
 
 
 should_run :: Maybe SDL.Event -> Bool
