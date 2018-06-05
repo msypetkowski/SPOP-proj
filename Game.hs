@@ -1,31 +1,66 @@
 module Game where
 
-import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Extra    (whileM)
-
-
 import qualified SDL
 import Draw (drawGame)
-import Rules (Player(Sheep, Wolf), initial_state, GameState, nextStates)
+import Rules (Player(Sheep, Wolf), initial_state, GameState(GameState, currentPlayer), nextStates, humanPlaying, opposite)
 import DrawState(sparse_to_draw_state)
+
+
+data Winner = Human | AI | None deriving (Show, Eq)
 
 -- TODO: implement AI or player movement
 -- now, there are only first possible move choices
-get_next_state :: GameState -> GameState
-get_next_state s = head (nextStates s)
-
-main_loop :: SDL.Renderer -> IO ()
-main_loop renderer = do
-    let cur_state = (initial_state Wolf)
-    whileM $
-        -- TODO: update somehow cur_state (using get_next_state)
-        fmap should_run SDL.pollEvent
-        >>= conditional_run (drawGame renderer
-                    (sparse_to_draw_state (get_next_state cur_state)))
+get_next_state :: GameState -> IO (Maybe GameState)
+get_next_state state@(GameState board player)
+    | humanPlaying == player = get_human_move state
+    | otherwise              = get_ai_move state
 
 
-should_run :: Maybe SDL.Event -> Bool
-should_run = maybe True (not . is_quit)
+get_ai_move state = do
+    return (Just $ head (nextStates state))
+
+
+get_human_move state = do
+    putStrLn "Human"
+    SDL.delay 1234
+    let next_states = nextStates state
+    if null next_states then
+        return Nothing
+    else
+        return $ Just $ last next_states
+
+
+start :: SDL.Renderer -> IO ()
+start renderer = do
+    winner <- main_loop renderer (initial_state Sheep)
+    putStrLn ("Winner is " ++ (show winner))
+
+
+main_loop :: SDL.Renderer -> GameState -> IO Winner
+main_loop renderer current_state = do
+    next_state <- get_next_state current_state
+    evaluate_state renderer current_state next_state
+
+
+evaluate_state :: SDL.Renderer -> GameState -> Maybe GameState -> IO Winner
+evaluate_state renderer old_state (Just new_state) = do
+    events <- SDL.pollEvents
+    drawGame renderer (sparse_to_draw_state new_state)
+    if not (find_quit_event events) then
+        main_loop renderer new_state
+    else
+        return None
+
+evaluate_state renderer old_state Nothing =
+    return $ toWinner $ opposite $ currentPlayer old_state
+
+
+find_quit_event :: [SDL.Event] -> Bool
+find_quit_event (event:rest)
+    | is_quit event = True
+    | otherwise     = find_quit_event rest
+
+find_quit_event [] = False
 
 
 is_quit :: SDL.Event -> Bool
@@ -33,6 +68,6 @@ is_quit (SDL.Event _ SDL.QuitEvent) = True
 is_quit _                           = False
 
 
-conditional_run :: (Monad m) => m a -> Bool -> m Bool
-conditional_run f True  = True <$ f
-conditional_run _ False = pure False
+toWinner :: Player -> Winner
+toWinner player | player == humanPlaying = Human
+                | otherwise              = AI

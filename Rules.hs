@@ -3,11 +3,14 @@ module Rules where
 import qualified Data.Map as Map
 
 boardMaxIndex = 7
+humanPlaying = Sheep
 
 type Position = (Int, Int)
 
 data Player = Sheep | Wolf deriving (Show, Eq)
 
+opposite Sheep = Wolf
+opposite Wolf = Sheep
 
 data GameState = GameState {
     board :: Map.Map Position Player,
@@ -49,7 +52,7 @@ get_all_sheep_moves sheep map =
 
 
 new_sheep_positions :: Position -> Map.Map Position Player -> [Position]
-new_sheep_positions (x, y) map = [(x + i, y + j) | i <- [1], j <- [-1, 1], is_move_valid (x + i, y + j) map]
+new_sheep_positions (x, y) map = [(x + i, y + j) | i <- [-1, 1], j <- [-1], is_move_valid (x + i, y + j) map]
 
 
 --see https://pl.wikipedia.org/wiki/Wilk_i_owce#/media/File:Foxandhounds.png

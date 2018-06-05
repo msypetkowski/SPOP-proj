@@ -5,6 +5,7 @@ import qualified SDL
 import Control.Monad          (void)
 import Control.Monad.IO.Class (MonadIO)
 import Data.Text              (pack)
+import Foreign.C.Types        (CInt)
 
 import SDL
 
@@ -19,7 +20,7 @@ with_SDL action = do
     SDL.quit
 
 
-with_window :: (MonadIO m) => String -> (Int, Int) -> (SDL.Window -> m a) -> m ()
+with_window :: (MonadIO m) => String -> (CInt, CInt) -> (SDL.Window -> m a) -> m ()
 with_window title (size_x, size_y) action = do
     window <- SDL.createWindow (Data.Text.pack title) window_config
     SDL.showWindow window
@@ -28,7 +29,7 @@ with_window title (size_x, size_y) action = do
 
     where
         window_config = SDL.defaultWindow { SDL.windowInitialSize = window_size }
-        window_size = SDL.V2 (fromIntegral size_x) (fromIntegral size_y)
+        window_size = SDL.V2 size_x size_y
 
 
 with_renderer :: (MonadIO m) => (SDL.Renderer -> m a) -> SDL.Window -> m ()
