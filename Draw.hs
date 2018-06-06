@@ -62,3 +62,21 @@ drawGame renderer (DrawGameState {board = b, current_player = c}) = do
     Graphics.set_color renderer Graphics.FieldBright
     drawBoard renderer b
     SDL.present renderer
+
+
+highlightFields :: SDL.Renderer -> [(Int, Int)] -> IO ()
+highlightFields renderer [] = return ()
+highlightFields renderer (field:fields) = do
+    highlightField' renderer field Graphics.FieldHighlight
+    highlightFields renderer fields
+
+
+highlightField :: SDL.Renderer -> (Int, Int) -> IO ()
+highlightField renderer (x, y) = do
+    highlightField' renderer (x, y) Graphics.PawnHighlight
+
+
+highlightField' renderer (x, y) color = do
+    Graphics.set_color renderer color
+    SDL.drawRect renderer (Just (mkRect ((fromIntegral x)*fieldSize) ((fromIntegral y)*fieldSize) fieldSize fieldSize))
+    SDL.present renderer

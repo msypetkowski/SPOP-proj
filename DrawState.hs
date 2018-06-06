@@ -13,7 +13,7 @@ data DrawGameState = DrawGameState {
 
 sparse_to_draw_state :: Rules.GameState -> DrawGameState
 sparse_to_draw_state b = DrawGameState {
-        board = (sparse_to_draw_state' (Rules.board b) (0,0) []),
+        board = reverse (sparse_to_draw_state' (Rules.board b) (0,0) []),
         current_player = Wolf
 }
 
@@ -21,14 +21,14 @@ sparse_to_draw_state' :: Map.Map Rules.Position Rules.Player -> Rules.Position -
 sparse_to_draw_state' m (x, y) acc = case x <= Rules.boardMaxIndex of
                                         True -> sparse_to_draw_state' m (x + 1, y) (row:acc)
                                             where
-                                                row = (sparse_to_draw_state'' m (x, y) [])
+                                                row = reverse (sparse_to_draw_state'' m (x, y) [])
                                         False -> acc
 
 sparse_to_draw_state'' :: Map.Map Rules.Position Rules.Player -> (Int, Int) -> [Pawn] -> [Pawn]
 sparse_to_draw_state'' m (x, y) acc = case y <= Rules.boardMaxIndex of
                                         True -> sparse_to_draw_state'' m (x, y+1) (pawn:acc)
                                             where
-                                                pawn = case (Map.lookup (x, y) m ) of
+                                                pawn = case (Map.lookup (y, x) m ) of
                                                     Just Wolf -> Black
                                                     Just Sheep -> White
                                                     Nothing -> None

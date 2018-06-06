@@ -3,7 +3,8 @@ module Rules where
 import qualified Data.Map as Map
 
 boardMaxIndex = 7
-humanPlaying = Sheep
+humanPlaying = Wolf
+startingPlayer = Wolf
 
 type Position = (Int, Int)
 
@@ -60,5 +61,5 @@ new_sheep_positions (x, y) map = [(x + i, y + j) | i <- [-1, 1], j <- [-1], is_m
 initial_state :: Player -> GameState
 initial_state starting = GameState {
     board = (Map.fromList (((0,0), Wolf):[((x, boardMaxIndex), Sheep) | x <- [1,3 .. boardMaxIndex]])),
-    currentPlayer = Wolf
+    currentPlayer = starting
 }
