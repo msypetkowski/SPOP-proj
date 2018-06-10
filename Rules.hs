@@ -8,7 +8,7 @@ startingPlayer = Wolf
 
 type Position = (Int, Int)
 
-data Player = Sheep | Wolf deriving (Show, Eq)
+data Player = Sheep | Wolf deriving (Read, Show, Eq)
 
 opposite Sheep = Wolf
 opposite Wolf = Sheep
@@ -16,7 +16,7 @@ opposite Wolf = Sheep
 data GameState = GameState {
     board :: Map.Map Position Player,
     currentPlayer :: Player
-} deriving (Show)
+} deriving (Read, Show)
 
 
 getWolfPos ((pos, Wolf):xs) = pos

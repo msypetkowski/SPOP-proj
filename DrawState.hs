@@ -3,7 +3,7 @@ import qualified Rules
 import Rules (Player(Sheep, Wolf))
 import qualified Data.Map as Map
 
-data Pawn = None | Black | White deriving (Show)
+data Pawn = None | Black | White deriving (Read, Show)
 
 
 data DrawGameState = DrawGameState {
