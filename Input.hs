@@ -18,7 +18,11 @@ handle_event :: SDL.Renderer -> GameState -> (SDL.Renderer -> Position -> GameSt
 handle_event renderer state handler = do
     event <- SDL.pollEvent
     case event of
-        (Just (SDL.Event _ (SDL.KeyboardEvent event_data))) -> handle_keyboard_event renderer state handler
+        (Just (SDL.Event _ (SDL.KeyboardEvent event_data))) -> do
+            new_state <- handle_keyboard_event event_data state
+            case new_state of
+                Nothing -> handle_event renderer state handler
+                Just state -> return (Just state)
         (Just (SDL.Event _ (SDL.MouseButtonEvent event_data@(SDL.MouseButtonEventData _ SDL.Pressed _ SDL.ButtonLeft _ coords)))) -> do
             handler renderer clicked_tile state
             where
@@ -30,22 +34,22 @@ load_state :: FilePath -> IO GameState
 load_state f = do s <- readFile f
                   return (read s)
 
-handle_keyboard_event renderer state handler = do
-    event <- SDL.pollEvent
-    case event of
-        --(Just (SDL.Event _ (SDL.KeyboardEvent event_data@(SDL.KeyboardEventData _ SDL.Pressed True keysym)))) -> do
-        (Just (SDL.Event _ (SDL.KeyboardEvent event_data@(SDL.KeyboardEventData _ _ _ _)))) -> do
-            -- TODO: why it doesnt't enter here always
-            print "IT SHOULD BE PRINTED WITH EACH ANY KEY PRESS AND RELEASE!"
-
-            -- TODO: use these
-            -- writeFile "qwe" (show state)
-            -- loaded_state <- load_state "qwe"
-            -- return (Just loaded_state)
-            handle_event renderer state handler
-        _ -> handle_event renderer state handler
-
-
+handle_keyboard_event :: SDL.KeyboardEventData -> GameState -> IO (Maybe GameState)
+handle_keyboard_event event_data@(SDL.KeyboardEventData _ SDL.Pressed _ keysym) game_state = do
+    case SDL.keysymKeycode keysym of
+        SDL.KeycodeS -> do
+            file_path <- return "game_state"
+            print ("Saving game state to: " ++ file_path)
+            writeFile file_path (show game_state)
+            return Nothing
+        SDL.KeycodeL -> do
+            file_path <- return "game_state"
+            print ("Loading game state from: " ++ file_path)
+            loaded_state <- load_state file_path
+            return (Just loaded_state)
+        _ -> return Nothing
+handle_keyboard_event _ _ = do
+    return Nothing
 
 get_index_from_coords (SDL.P (SDL.V2 x y)) = (floor $ (fromIntegral x) / (fromIntegral fieldSize),
                                               floor $ (fromIntegral y) / (fromIntegral fieldSize))
