@@ -4,6 +4,7 @@ import qualified Data.Map as Map
 
 boardMaxIndex = 7
 humanPlaying = Sheep
+aiPlaying = opposite humanPlaying
 startingPlayer = Wolf
 
 type Position = (Int, Int)
