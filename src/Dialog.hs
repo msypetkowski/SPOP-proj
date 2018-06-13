@@ -2,6 +2,7 @@ module Dialog where
 
 import Graphics.UI.Gtk hiding (response)
 
+
 get_file_name_dialog_load :: IO (Maybe String)
 get_file_name_dialog_load = do
     initGUI
@@ -13,6 +14,8 @@ get_file_name_dialog_load = do
     widgetShow dialog
     response <- dialogRun dialog
     widgetHide dialog
+    idleAdd idle_fun 0
+    mainGUI
     case response of
         ResponseAccept -> do Just fileName <- fileChooserGetFilename dialog
                              putStrLn $ "opened file " ++ show fileName
@@ -34,6 +37,8 @@ get_file_name_dialog_save = do
     widgetShow dialog
     response <- dialogRun dialog
     widgetHide dialog
+    idleAdd idle_fun 0
+    mainGUI
     case response of
         ResponseAccept -> do Just fileName <- fileChooserGetFilename dialog
                              putStrLn $ "created file " ++ show fileName
@@ -42,3 +47,9 @@ get_file_name_dialog_save = do
                              return Nothing
         ResponseDeleteEvent -> do putStrLn "dialog closed"
                                   return Nothing
+
+
+idle_fun :: IO Bool
+idle_fun = do
+    mainQuit
+    return False
