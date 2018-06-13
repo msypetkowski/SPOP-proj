@@ -2,21 +2,43 @@ module Dialog where
 
 import Graphics.UI.Gtk hiding (response)
 
-get_file_name_dialog :: IO ()
-get_file_name_dialog = do
+get_file_name_dialog_load :: IO (Maybe String)
+get_file_name_dialog_load = do
+    initGUI
     dialog <- fileChooserDialogNew
                 (Just $ "Select game state file")
-                (Nothing)                                     --the parent window (TODO: why seqfault)
-                FileChooserActionOpen                         --the kind of dialog we want
-                [("gtk-cancel"                                --The buttons to display
-                ,ResponseCancel)
-                ,("gtk-open"
-                , ResponseAccept)]
+                (Nothing)
+                FileChooserActionOpen
+                [("gtk-cancel" ,ResponseCancel) ,("gtk-open" , ResponseAccept)]
     widgetShow dialog
     response <- dialogRun dialog
+    widgetHide dialog
     case response of
         ResponseAccept -> do Just fileName <- fileChooserGetFilename dialog
-                             putStrLn $ "you selected the file " ++ show fileName
-        ResponseCancel -> putStrLn "dialog canceled"
-        ResponseDeleteEvent -> putStrLn "dialog closed"
+                             putStrLn $ "opened file " ++ show fileName
+                             return (Just fileName)
+        ResponseCancel -> do putStrLn "dialog canceled"
+                             return Nothing
+        ResponseDeleteEvent -> do putStrLn "dialog closed"
+                                  return Nothing
+
+
+get_file_name_dialog_save :: IO (Maybe String)
+get_file_name_dialog_save = do
+    initGUI
+    dialog <- fileChooserDialogNew
+                (Just $ "Select game state to load")
+                (Nothing)
+                FileChooserActionSave
+                [("gtk-cancel" ,ResponseCancel) ,("gtk-save" , ResponseAccept)]
+    widgetShow dialog
+    response <- dialogRun dialog
     widgetHide dialog
+    case response of
+        ResponseAccept -> do Just fileName <- fileChooserGetFilename dialog
+                             putStrLn $ "created file " ++ show fileName
+                             return (Just fileName)
+        ResponseCancel -> do putStrLn "dialog canceled"
+                             return Nothing
+        ResponseDeleteEvent -> do putStrLn "dialog closed"
+                                  return Nothing

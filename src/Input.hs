@@ -5,7 +5,7 @@ import Rules(GameState(GameState), Player(Wolf, Sheep), Position, wolfMove, new_
 import qualified Data.Map as Map
 import Draw(highlightField, highlightFields, drawGame, fieldSize)
 import DrawState(sparse_to_draw_state)
-import Dialog(get_file_name_dialog)
+import Dialog(get_file_name_dialog_save, get_file_name_dialog_load)
 
 get_human_move :: SDL.Renderer -> GameState -> IO (Maybe GameState)
 get_human_move renderer state = do
@@ -39,16 +39,21 @@ handle_keyboard_event :: SDL.KeyboardEventData -> GameState -> IO (Maybe GameSta
 handle_keyboard_event event_data@(SDL.KeyboardEventData _ SDL.Pressed _ keysym) game_state = do
     case SDL.keysymKeycode keysym of
         SDL.KeycodeS -> do
-            file_path <- return "game_state"
-            get_file_name_dialog
-            print ("Saving game state to: " ++ file_path)
-            writeFile file_path (show game_state)
-            return Nothing
+            file_path <- get_file_name_dialog_save
+            case file_path of
+                Just path -> do
+                    print ("Saving game state to: " ++ path)
+                    writeFile path (show game_state)
+                    return Nothing
+                Nothing -> return Nothing
         SDL.KeycodeL -> do
-            file_path <- return "game_state"
-            print ("Loading game state from: " ++ file_path)
-            loaded_state <- load_state file_path
-            return (Just loaded_state)
+            file_path <- get_file_name_dialog_load
+            case file_path of
+                Just path -> do
+                    print ("Loading game state from: " ++ path)
+                    loaded_state <- load_state path
+                    return (Just loaded_state)
+                Nothing -> return Nothing
         _ -> return Nothing
 handle_keyboard_event _ _ = do
     return Nothing
