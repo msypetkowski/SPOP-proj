@@ -5,6 +5,7 @@ import Rules(GameState(GameState), Player(Wolf, Sheep), Position, wolfMove, new_
 import qualified Data.Map as Map
 import Draw(highlightField, highlightFields, drawGame, fieldSize)
 import DrawState(sparse_to_draw_state)
+import Dialog(get_file_name_dialog)
 
 get_human_move :: SDL.Renderer -> GameState -> IO (Maybe GameState)
 get_human_move renderer state = do
@@ -39,6 +40,7 @@ handle_keyboard_event event_data@(SDL.KeyboardEventData _ SDL.Pressed _ keysym) 
     case SDL.keysymKeycode keysym of
         SDL.KeycodeS -> do
             file_path <- return "game_state"
+            get_file_name_dialog
             print ("Saving game state to: " ++ file_path)
             writeFile file_path (show game_state)
             return Nothing
