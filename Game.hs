@@ -2,24 +2,15 @@ module Game where
 
 import qualified SDL
 import Draw (drawGame)
-import Rules (Player, initial_state, GameState(GameState, currentPlayer), nextStates, humanPlaying, opposite, startingPlayer)
+import qualified Data.Map as Map
+import Rules (Player(Sheep, Wolf), initial_state, GameState(GameState, currentPlayer), get_next_states, humanPlaying, opposite, startingPlayer, get_wolf_pos, Position)
 import DrawState(sparse_to_draw_state)
 import Input(get_human_move)
 
 
 data Winner = Human | AI | None deriving (Show, Eq)
 
--- TODO: implement AI or player movement
--- now, there are only first possible move choices
-get_next_state :: SDL.Renderer -> GameState -> IO (Maybe GameState)
-get_next_state renderer state@(GameState _ player)
-    | humanPlaying == player = get_human_move renderer state
-    | otherwise              = return $ get_ai_move state
-
-
-get_ai_move state =
-    Just $ head (nextStates state)
-
+minimaxDepth = 5
 
 start :: SDL.Renderer -> IO ()
 start renderer = do
@@ -42,6 +33,29 @@ main_loop renderer current_state = do
                 main_loop renderer state
             Nothing      -> return $ toWinner $ opposite $ currentPlayer current_state
 
+get_next_state :: SDL.Renderer -> GameState -> IO (Maybe GameState)
+get_next_state renderer state@(GameState _ player)
+    | humanPlaying == player = get_human_move renderer state
+    | otherwise              = return $ get_ai_move state
+
+
+get_ai_move state = minimax state
+
+minimax state@(GameState board currentPlayer)
+    | currentPlayer == opposite humanPlaying = Just (head $ filter (\state -> evaluate state == maxStateValue) (get_next_states state))
+    | currentPlayer == humanPlaying = Just (head $ filter (\state -> evaluate state == minStateValue) (get_next_states state))
+        where maxStateValue = maximum $ map evaluate (get_next_states state)
+              minStateValue = minimum $ map evaluate (get_next_states state)
+
+evaluate :: GameState -> Int
+evaluate state@(GameState board player)
+    | player == Wolf = evaluate_wolf_heuristic board
+    | player == Sheep = negate $ evaluate_wolf_heuristic board
+
+evaluate_wolf_heuristic board = get_y $ get_wolf_pos (Map.toList board)
+
+get_y :: Position -> Int
+get_y (x, y) = y
 
 find_quit_event :: [SDL.Event] -> Bool
 find_quit_event (event:rest)
