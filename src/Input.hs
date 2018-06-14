@@ -1,7 +1,7 @@
 module Input where
 
 import qualified SDL
-import Rules(GameState(GameState), Player(Wolf, Sheep), Position, wolfMove, new_sheep_positions, nextStates, opposite)
+import Rules(GameState(GameState), Player(Wolf, Sheep), Position, wolfMove, new_sheep_positions, get_next_states, opposite)
 import qualified Data.Map as Map
 import Draw(highlightField, highlightFields, drawGame, fieldSize)
 import DrawState(sparse_to_draw_state)
@@ -9,7 +9,7 @@ import Dialog(get_file_name_dialog_save, get_file_name_dialog_load)
 
 get_human_move :: SDL.Renderer -> GameState -> IO (Maybe GameState)
 get_human_move renderer state = do
-    if null $ nextStates state then
+    if null $ get_next_states state then
         return Nothing
     else do
         handle_event renderer state first_mouse_press

@@ -3,7 +3,8 @@ module Rules where
 import qualified Data.Map as Map
 
 boardMaxIndex = 7
-humanPlaying = Wolf
+humanPlaying = Sheep
+aiPlaying = opposite humanPlaying
 startingPlayer = Wolf
 
 type Position = (Int, Int)
@@ -19,27 +20,26 @@ data GameState = GameState {
 } deriving (Read, Show)
 
 
-getWolfPos ((pos, Wolf):xs) = pos
-getWolfPos ((pos, Sheep):xs) = getWolfPos xs
+get_next_states :: GameState -> [GameState]
+get_next_states (GameState board Wolf) = [(GameState (Map.insert key Wolf (Map.delete wp board)) Sheep) | key <- (wolfMove wp board)]
+                            where wp = get_wolf_pos (Map.toList board)
+get_next_states (GameState map Sheep) = concat [(get_all_sheep_moves sheep_pos map) | sheep_pos <- sheep_positions map]
 
 
-is_field_taken :: Position -> Map.Map Position Player -> Bool
-is_field_taken position pawns_map = (Map.lookup position pawns_map) /= Nothing
-
-
-is_move_valid :: Position -> Map.Map Position Player -> Bool
-is_move_valid (x,y) pawnsMap = x >= 0 && y >= 0 && x <= boardMaxIndex && y <= boardMaxIndex && not (is_field_taken (x,y) pawnsMap)
+get_wolf_pos ((pos, Wolf):xs) = pos
+get_wolf_pos ((pos, Sheep):xs) = get_wolf_pos xs
 
 
 wolfMove :: Position -> Map.Map Position Player -> [Position]
 wolfMove (x,y) pawnsMap = [(x+i, y+j) | i <- [negate 1, 1], j <- [negate 1, 1], is_move_valid (x+i, y+j) pawnsMap]
 
 
-nextStates :: GameState -> [GameState]
-nextStates (GameState map Wolf) = [(GameState (Map.insert key Wolf (Map.delete wp map)) Sheep) | key <- (wolfMove wp map)]
-                            where wp = getWolfPos (Map.toList map)
+is_move_valid :: Position -> Map.Map Position Player -> Bool
+is_move_valid (x,y) pawnsMap = x >= 0 && y >= 0 && x <= boardMaxIndex && y <= boardMaxIndex && not (is_field_taken (x,y) pawnsMap)
 
-nextStates (GameState map Sheep) = concat [(get_all_sheep_moves sheep_pos map) | sheep_pos <- sheep_positions map]
+
+is_field_taken :: Position -> Map.Map Position Player -> Bool
+is_field_taken position pawns_map = (Map.lookup position pawns_map) /= Nothing
 
 
 sheep_positions :: Map.Map Position Player -> [Position]

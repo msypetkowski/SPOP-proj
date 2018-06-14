@@ -2,24 +2,15 @@ module Game where
 
 import qualified SDL
 import Draw (drawGame)
-import Rules (Player, initial_state, GameState(GameState, currentPlayer), nextStates, humanPlaying, opposite, startingPlayer)
+import qualified Data.Map as Map
+import Rules (Player(Sheep, Wolf), sheep_positions, initial_state, GameState(GameState, currentPlayer), get_next_states, humanPlaying, aiPlaying, opposite, startingPlayer, get_wolf_pos, Position)
 import DrawState(sparse_to_draw_state)
 import Input(get_human_move)
 
 
 data Winner = Human | AI | None deriving (Show, Eq)
 
--- TODO: implement AI or player movement
--- now, there are only first possible move choices
-get_next_state :: SDL.Renderer -> GameState -> IO (Maybe GameState)
-get_next_state renderer state@(GameState _ player)
-    | humanPlaying == player = get_human_move renderer state
-    | otherwise              = return $ get_ai_move state
-
-
-get_ai_move state =
-    Just $ head (nextStates state)
-
+depthLimit = 2
 
 start :: SDL.Renderer -> IO ()
 start renderer = do
@@ -42,6 +33,39 @@ main_loop renderer current_state = do
                 main_loop renderer state
             Nothing      -> return $ toWinner $ opposite $ currentPlayer current_state
 
+get_next_state :: SDL.Renderer -> GameState -> IO (Maybe GameState)
+get_next_state renderer state@(GameState _ player)
+    | humanPlaying == player = get_human_move renderer state
+    | otherwise              = return $ get_ai_move state
+
+
+get_ai_move state = if is_terminal state then Nothing else Just $ get_second $ minimax depthLimit state
+
+minimax :: Int -> GameState -> (Int, GameState)
+minimax depth state@(GameState board currentPlayer)
+    | is_terminal state = (10, state)
+    | currentPlayer == aiPlaying && depth == depthLimit = head $ filter (\(value, s) -> value == maxValue) childrenMinmaxResults
+    | currentPlayer == humanPlaying && depth == depthLimit = head $ filter (\(value, s) -> value == minValue) childrenMinmaxResults
+    | currentPlayer == aiPlaying && depth > 0 = (maxValue, state)
+    | currentPlayer == humanPlaying && depth > 0 = (minValue, state)
+    | currentPlayer == aiPlaying && depth == 0 = (maxStateValue, state)
+    | currentPlayer == humanPlaying && depth == 0 = (minStateValue, state)
+        where nextStates = get_next_states state
+              maxStateValue = if length nextStates > 0 then maximum $ map evaluate nextStates else -10
+              minStateValue = if length nextStates > 0 then minimum $ map evaluate nextStates else -10
+              childrenMinmaxResults = map (minimax (depth-1)) nextStates
+              maxValue = if length childrenMinmaxResults > 0 then maximum $ map get_first childrenMinmaxResults else -10
+              minValue = if length childrenMinmaxResults > 0 then minimum $ map get_first childrenMinmaxResults else -10
+
+is_terminal (GameState board currentPlayer) = (get_second $ get_wolf_pos (Map.toList board)) > (minimum $ map get_second (sheep_positions board))
+
+evaluate :: GameState -> Int
+evaluate state@(GameState board _) = negate $ evaluate_wolf_heuristic board
+
+evaluate_wolf_heuristic board = negate $ get_second $ get_wolf_pos (Map.toList board)
+
+get_second (x, y) = y
+get_first (x, y) = x
 
 find_quit_event :: [SDL.Event] -> Bool
 find_quit_event (event:rest)
