@@ -26,12 +26,18 @@ main_loop renderer current_state = do
     if find_quit_event events then
         return None
     else do
-        next_state <- get_next_state renderer current_state
-        case next_state of
-            (Just state) -> do
-                drawGame renderer (sparse_to_draw_state state)
-                main_loop renderer state
-            Nothing      -> return $ toWinner $ opposite $ currentPlayer current_state
+        if is_terminal current_state then
+            return winner
+        else do
+            next_state <- get_next_state renderer current_state
+            case next_state of
+                (Just state) -> do
+                    drawGame renderer (sparse_to_draw_state state)
+                    main_loop renderer state
+                Nothing      -> return winner
+    where
+        winner = toWinner $ opposite $ currentPlayer current_state
+
 
 get_next_state :: SDL.Renderer -> GameState -> IO (Maybe GameState)
 get_next_state renderer state@(GameState _ player)
@@ -39,7 +45,11 @@ get_next_state renderer state@(GameState _ player)
     | otherwise              = return $ get_ai_move state
 
 
-get_ai_move state = if is_terminal state then Nothing else Just $ get_second $ minimax depthLimit state
+get_ai_move state =
+    if null $ get_next_states state then
+        Nothing
+    else
+        Just $ snd $ minimax depthLimit state
 
 minimax :: Int -> GameState -> (Int, GameState)
 minimax depth state@(GameState board currentPlayer)
@@ -54,18 +64,19 @@ minimax depth state@(GameState board currentPlayer)
               maxStateValue = if length nextStates > 0 then maximum $ map evaluate nextStates else -10
               minStateValue = if length nextStates > 0 then minimum $ map evaluate nextStates else -10
               childrenMinmaxResults = map (minimax (depth-1)) nextStates
-              maxValue = if length childrenMinmaxResults > 0 then maximum $ map get_first childrenMinmaxResults else -10
-              minValue = if length childrenMinmaxResults > 0 then minimum $ map get_first childrenMinmaxResults else -10
+              maxValue = if length childrenMinmaxResults > 0 then maximum $ map fst childrenMinmaxResults else -10
+              minValue = if length childrenMinmaxResults > 0 then minimum $ map fst childrenMinmaxResults else -10
 
-is_terminal (GameState board currentPlayer) = (get_second $ get_wolf_pos (Map.toList board)) > (minimum $ map get_second (sheep_positions board))
+
+is_terminal (GameState board currentPlayer) =
+    (snd $ get_wolf_pos (Map.toList board)) >
+    (maximum $ map snd (sheep_positions board))
+
 
 evaluate :: GameState -> Int
 evaluate state@(GameState board _) = negate $ evaluate_wolf_heuristic board
 
-evaluate_wolf_heuristic board = negate $ get_second $ get_wolf_pos (Map.toList board)
-
-get_second (x, y) = y
-get_first (x, y) = x
+evaluate_wolf_heuristic board = negate $ snd $ get_wolf_pos (Map.toList board)
 
 find_quit_event :: [SDL.Event] -> Bool
 find_quit_event (event:rest)

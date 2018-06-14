@@ -7,6 +7,8 @@ import Draw(highlightField, highlightFields, drawGame, fieldSize)
 import DrawState(sparse_to_draw_state)
 import Dialog(get_file_name_dialog_save, get_file_name_dialog_load)
 
+import Text.Read(readMaybe)
+
 get_human_move :: SDL.Renderer -> GameState -> IO (Maybe GameState)
 get_human_move renderer state = do
     if null $ get_next_states state then
@@ -21,6 +23,7 @@ handle_event renderer state handler = do
     case event of
         (Just (SDL.Event _ (SDL.KeyboardEvent event_data))) -> do
             new_state <- handle_keyboard_event event_data state
+            Draw.drawGame renderer (sparse_to_draw_state state)
             case new_state of
                 Nothing -> handle_event renderer state handler
                 Just state -> return (Just state)
@@ -31,9 +34,9 @@ handle_event renderer state handler = do
         (Just (SDL.Event _ (SDL.QuitEvent))) -> return Nothing
         _                                    -> handle_event renderer state handler
 
-load_state :: FilePath -> IO GameState
+load_state :: FilePath -> IO (Maybe GameState)
 load_state f = do s <- readFile f
-                  return (read s)
+                  return (readMaybe s)
 
 handle_keyboard_event :: SDL.KeyboardEventData -> GameState -> IO (Maybe GameState)
 handle_keyboard_event event_data@(SDL.KeyboardEventData _ SDL.Pressed _ keysym) game_state = do
@@ -52,7 +55,11 @@ handle_keyboard_event event_data@(SDL.KeyboardEventData _ SDL.Pressed _ keysym) 
                 Just path -> do
                     print ("Loading game state from: " ++ path)
                     loaded_state <- load_state path
-                    return (Just loaded_state)
+                    case loaded_state of
+                        Just state -> return loaded_state
+                        _ -> do
+                            print "Failed to load."
+                            return $ Just game_state
                 Nothing -> return Nothing
         _ -> return Nothing
 handle_keyboard_event _ _ = do
