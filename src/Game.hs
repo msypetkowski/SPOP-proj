@@ -10,7 +10,7 @@ import Input(get_human_move)
 
 data Winner = Human | AI | None deriving (Show, Eq)
 
-depthLimit = 2
+depthLimit = 7
 
 start :: SDL.Renderer -> IO ()
 start renderer = do
@@ -53,30 +53,30 @@ get_ai_move state =
 
 minimax :: Int -> GameState -> (Int, GameState)
 minimax depth state@(GameState board currentPlayer)
-    | is_terminal state = (10, state)
+    | is_terminal state = (1000+depth, state)
     | currentPlayer == aiPlaying && depth == depthLimit = head $ filter (\(value, s) -> value == maxValue) childrenMinmaxResults
     | currentPlayer == humanPlaying && depth == depthLimit = head $ filter (\(value, s) -> value == minValue) childrenMinmaxResults
     | currentPlayer == aiPlaying && depth > 0 = (maxValue, state)
     | currentPlayer == humanPlaying && depth > 0 = (minValue, state)
-    | currentPlayer == aiPlaying && depth == 0 = (maxStateValue, state)
+    | currentPlayer == aiPlaying && depth == 0 = (maxStateValue+depth, state)
     | currentPlayer == humanPlaying && depth == 0 = (minStateValue, state)
         where nextStates = get_next_states state
-              maxStateValue = if length nextStates > 0 then maximum $ map evaluate nextStates else -10
-              minStateValue = if length nextStates > 0 then minimum $ map evaluate nextStates else -10
+              maxStateValue = if length nextStates > 0 then maximum $ map evaluate nextStates else -1000
+              minStateValue = if length nextStates > 0 then minimum $ map evaluate nextStates else -1000
               childrenMinmaxResults = map (minimax (depth-1)) nextStates
-              maxValue = if length childrenMinmaxResults > 0 then maximum $ map fst childrenMinmaxResults else -10
-              minValue = if length childrenMinmaxResults > 0 then minimum $ map fst childrenMinmaxResults else -10
+              maxValue = if length childrenMinmaxResults > 0 then maximum $ map fst childrenMinmaxResults else -1000
+              minValue = if length childrenMinmaxResults > 0 then minimum $ map fst childrenMinmaxResults else -1000
 
 
 is_terminal (GameState board currentPlayer) =
-    (snd $ get_wolf_pos (Map.toList board)) >
-    (maximum $ map snd (sheep_positions board))
+    (snd $ get_wolf_pos (Map.toList board)) == 7
+    -- (maximum $ map snd (sheep_positions board))
 
 
 evaluate :: GameState -> Int
-evaluate state@(GameState board _) = negate $ evaluate_wolf_heuristic board
+evaluate state@(GameState board _) = evaluate_wolf_heuristic board
 
-evaluate_wolf_heuristic board = negate $ snd $ get_wolf_pos (Map.toList board)
+evaluate_wolf_heuristic board = (snd $ get_wolf_pos (Map.toList board)) * 100
 
 find_quit_event :: [SDL.Event] -> Bool
 find_quit_event (event:rest)
